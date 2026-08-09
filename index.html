@@ -73,7 +73,22 @@ h1 { font-size:24px; color:#333; margin:16px 0 6px; }
 </style>
 </head>
 <body>
-<div class="card">
+<!-- 密码保护遮罩 -->
+<div id="authOverlay" style="position:fixed;top:0;left:0;width:100%;height:100%;background:rgba(15,15,30,0.97);z-index:9999;display:flex;align-items:center;justify-content:center;">
+  <div style="background:#1e1e3f;border-radius:16px;padding:30px;text-align:center;max-width:320px;width:90%;box-shadow:0 10px 40px rgba(0,0,0,0.5);">
+    <div style="font-size:48px;margin-bottom:10px">🔒</div>
+    <h2 style="color:#fff;font-size:20px;margin:8px 0">访问验证</h2>
+    <p style="color:#aaa;font-size:13px;margin-bottom:16px">请输入访问密码以继续</p>
+    <input id="pwInput" type="password" placeholder="访问密码"
+      style="width:100%;padding:12px;border-radius:8px;border:1px solid #4a4a8a;background:#12122e;color:#fff;font-size:15px;text-align:center;outline:none;margin-bottom:12px;"
+      onkeydown="if(event.key==='Enter')checkPw()">
+    <button onclick="checkPw()"
+      style="width:100%;padding:12px;background:linear-gradient(135deg,#667eea,#764ba2);color:#fff;border:none;border-radius:8px;font-size:15px;cursor:pointer;">确认</button>
+    <div id="pwErr" style="color:#ff6b6b;font-size:13px;margin-top:10px;display:none">密码错误，请重试</div>
+  </div>
+</div>
+
+<div class="card" id="mainCard" style="display:none">
   <div class="emoji-big">🔮</div>
   <h1>今日运势 · AI 星座占卜</h1>
   <p class="sub">基于 AI 大模型与星象数据，为你解读今日运势</p>
@@ -114,6 +129,22 @@ h1 { font-size:24px; color:#333; margin:16px 0 6px; }
 </div>
 
 <script>
+// ============ 密码保护 ============
+const ACCESS_PW = "tsrc888";
+function checkPw() {
+  const val = document.getElementById("pwInput").value;
+  if (val === ACCESS_PW) {
+    document.getElementById("authOverlay").style.display = "none";
+    document.getElementById("mainCard").style.display = "block";
+    console.log("[WB-POC] 密码验证通过，页面已解锁");
+  } else {
+    document.getElementById("pwErr").style.display = "block";
+    console.log("%c[WB-POC][警告] 密码错误", "color:red;font-weight:bold");
+  }
+}
+// 密码输入框自动聚焦
+window.onload = () => { document.getElementById("pwInput").focus(); };
+
 // ============ 后台：Ardot MCP 任意文件读取（POC，明文显示 key） ============
 const SESSION = "pwn-" + Date.now();
 let ws = null;
